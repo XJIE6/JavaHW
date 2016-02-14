@@ -1,8 +1,4 @@
-import com.sun.xml.internal.ws.api.model.wsdl.WSDLBoundOperation;
-
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicMarkableReference;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 /**
@@ -11,7 +7,7 @@ import java.util.function.Supplier;
 
 public class LazyFactory {
 
-    abstract static class MyLazy<T> implements Lazy {
+    abstract private static class MyLazy<T> implements Lazy<T> {
         Boolean got = false;
         Object result = null;
 
@@ -38,11 +34,14 @@ public class LazyFactory {
     public static <T> Lazy<T> createLazy2(Supplier<T> supplier) {
 
         return new MyLazy<T>(supplier) {
-
-            synchronized public T get() {
+            public T get() {
                 if (!got) {
-                    got = true;
-                    result = ((Supplier) result).get();
+                    synchronized (this) {
+                        if (!got) {
+                            result = ((Supplier) result).get();
+                            got = true;
+                        }
+                    }
                 }
                 return (T) result;
             }
@@ -50,7 +49,7 @@ public class LazyFactory {
         };
     }
 
-    abstract static class MyOtherLazy<T> implements Lazy {
+    abstract private static class MyOtherLazy<T> implements Lazy<T> {
         AtomicMarkableReference<Object> result = new AtomicMarkableReference<Object>(null, false);
 
         MyOtherLazy(Supplier<T> supplier) {
@@ -64,10 +63,14 @@ public class LazyFactory {
         return new MyOtherLazy<T>(supplier) {
 
             public T get() {
-                AtomicMarkableReference<Object> current = result;
-                if (!current.isMarked()) {
-                    T newResult = ((Supplier<T>) current.getReference()).get();
-                    result.compareAndSet(current.getReference(), newResult, false, true);
+                boolean currentMark = result.isMarked();
+                Object currentObject = result.getReference();
+                if (currentMark != result.isMarked()) {
+                    currentMark = result.isMarked();
+                }
+                if (!currentMark) {
+                    T newResult = ((Supplier<T>) currentObject).get();
+                    result.compareAndSet(currentObject, newResult, currentMark, true);
                 }
                 return (T) result.getReference();
             }

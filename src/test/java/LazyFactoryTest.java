@@ -10,8 +10,8 @@ import static org.junit.Assert.*;
  */
 public class LazyFactoryTest {
 
-    static class LazyFactoryTester1<T> {
-        static int runs = 0;
+    private static class LazyFactoryTester1<T> {
+        private int runs = 0;
 
         LazyFactoryTester1(final Supplier<T> supplier) {
             runs = 0;
@@ -31,33 +31,38 @@ public class LazyFactoryTest {
     }
 
     @org.junit.Test
-    public void testCreateLazy1() throws Exception {
-        new LazyFactoryTester1(new Supplier<Integer>() {
+    public void testCreateLazy1Null() {
+        new LazyFactoryTester1<Integer>(new Supplier<Integer>() {
             public Integer get() {
                 return null;
             }
         });
+    }
 
-        new LazyFactoryTester1(new Supplier<Integer>() {
+    @org.junit.Test
+    public void testCreateLazy1SameIntegers() {
+        new LazyFactoryTester1<Integer>(new Supplier<Integer>() {
             public Integer get() {
                 return 1;
             }
         });
+    }
 
-        new LazyFactoryTester1(new Supplier<Integer>() {
+    @org.junit.Test
+    public void testCreateLazy1RandomInteger() {
+        new LazyFactoryTester1<Integer>(new Supplier<Integer>() {
             Random random = new Random(123);
 
             public Integer get() {
                 return random.nextInt();
             }
         });
-
     }
 
-    static class LazyFactoryTester2<T> {
-        volatile static int runs;
+    private static class LazyFactoryTester2<T> {
+        volatile int runs;
         static final int n = 10;
-        static ArrayList<Object> answer = new ArrayList<Object>();
+        ArrayList<Object> answer = new ArrayList<Object>();
 
         LazyFactoryTester2(final Supplier<T> supplier) {
             answer.clear();
@@ -104,28 +109,37 @@ public class LazyFactoryTest {
     }
 
     @org.junit.Test
-    public void testCreateLazy2() throws Exception {
-        new LazyFactoryTester2(new Supplier<Integer>() {
+    public void testCreateLazy2Null() {
+        new LazyFactoryTester2<Integer>(new Supplier<Integer>() {
             public Integer get() {
                 return null;
             }
         });
+    }
 
-        new LazyFactoryTester2(new Supplier<Integer>() {
+    @org.junit.Test
+    public void testCreateLazy2SameInteger() {
+        new LazyFactoryTester2<Integer>(new Supplier<Integer>() {
             public Integer get() {
                 return 1;
             }
         });
+    }
 
-        new LazyFactoryTester2(new Supplier<Integer>() {
+    @org.junit.Test
+    public void testCreateLazy2RandomInteger() {
+        new LazyFactoryTester2<Integer>(new Supplier<Integer>() {
             Random random = new Random(123);
 
             public Integer get() {
                 return random.nextInt();
             }
         });
+    }
 
-        new LazyFactoryTester2(new Supplier<String>() {
+    @org.junit.Test
+    public void testCreateLazy2NullThenString() {
+        new LazyFactoryTester2<String>(new Supplier<String>() {
             boolean flag = true;
 
             public String get() {
@@ -136,8 +150,11 @@ public class LazyFactoryTest {
                 return "abacaba";
             }
         });
+    }
 
-        new LazyFactoryTester2(new Supplier<String>() {
+    @org.junit.Test
+    public void testCreateLazy2StringThenNull() {
+        new LazyFactoryTester2<String>(new Supplier<String>() {
             boolean flag = true;
 
             public String get() {
@@ -148,8 +165,11 @@ public class LazyFactoryTest {
                 return null;
             }
         });
+    }
 
-        new LazyFactoryTester2(new Supplier<String>() {
+    @org.junit.Test
+    public void testCreateLazy2StringOrNullRandomly() {
+        new LazyFactoryTester2<String>(new Supplier<String>() {
             Random random = new Random(123);
 
             public String get() {
@@ -163,7 +183,7 @@ public class LazyFactoryTest {
 
     static class LazyFactoryTester3<T> {
         static final int n = 10;
-        static ArrayList<Object> answer = new ArrayList<Object>();
+        ArrayList<Object> answer = new ArrayList<Object>();
 
         LazyFactoryTester3(final Supplier<T> supplier) {
             answer.clear();
@@ -203,28 +223,37 @@ public class LazyFactoryTest {
     }
 
     @org.junit.Test
-    public void testCreateLazy3() throws Exception {
-        new LazyFactoryTester3(new Supplier<Integer>() {
+    public void testCreateLazy3Null() {
+        new LazyFactoryTester3<Integer>(new Supplier<Integer>() {
             public Integer get() {
                 return null;
             }
         });
+    }
 
-        new LazyFactoryTester3(new Supplier<Integer>() {
+    @org.junit.Test
+    public void testCreateLazy3SameInteger() {
+        new LazyFactoryTester3<Integer>(new Supplier<Integer>() {
             public Integer get() {
                 return 1;
             }
         });
+    }
 
-        new LazyFactoryTester3(new Supplier<Integer>() {
+    @org.junit.Test
+    public void testCreateLazy3RandomInteger() {
+        new LazyFactoryTester3<Integer>(new Supplier<Integer>() {
             Random random = new Random(123);
 
             public Integer get() {
                 return random.nextInt();
             }
         });
+    }
 
-        new LazyFactoryTester3(new Supplier<String>() {
+    @org.junit.Test
+    public void testCreateLazy3NullThenString() {
+        new LazyFactoryTester3<String>(new Supplier<String>() {
             boolean flag = true;
 
             public String get() {
@@ -235,8 +264,11 @@ public class LazyFactoryTest {
                 return "abacaba";
             }
         });
+    }
 
-        new LazyFactoryTester3(new Supplier<String>() {
+    @org.junit.Test
+    public void testCreateLazy3StingThenNull() {
+        new LazyFactoryTester3<String>(new Supplier<String>() {
             boolean flag = true;
 
             public String get() {
@@ -247,8 +279,11 @@ public class LazyFactoryTest {
                 return null;
             }
         });
+    }
 
-        new LazyFactoryTester3(new Supplier<String>() {
+    @org.junit.Test
+    public void testCreateLazy3NullOrStringRandom() {
+        new LazyFactoryTester3<String>(new Supplier<String>() {
             Random random = new Random(123);
 
             public String get() {
@@ -258,8 +293,11 @@ public class LazyFactoryTest {
                 return null;
             }
         });
+    }
 
-        new LazyFactoryTester3(new Supplier<Supplier<String>>() {
+    @org.junit.Test
+    public void testCreateLazy3Supplier() {
+        new LazyFactoryTester3<Supplier<String>>(new Supplier<Supplier<String>>() {
             public Supplier<String> get() {
                 return new Supplier<String>() {
                     Random random = new Random(123);
@@ -273,8 +311,11 @@ public class LazyFactoryTest {
                 };
             }
         });
+    }
 
-        new LazyFactoryTester3(new Supplier<Supplier<String>>() {
+    @org.junit.Test
+    public void testCreateLazy3SupplierOrNullRandomly() {
+        new LazyFactoryTester3<Supplier<String>>(new Supplier<Supplier<String>>() {
             Random random = new Random(123);
 
             public Supplier<String> get() {
@@ -282,7 +323,7 @@ public class LazyFactoryTest {
                     return null;
                 }
                 return new Supplier<String>() {
-                    Random random = new Random(123);
+                    Random random = new Random(1234);
 
                     public String get() {
                         if (random.nextBoolean()) {
