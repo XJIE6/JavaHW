@@ -22,7 +22,7 @@ public class LazyFactoryTest {
                 }
             });
             T answer = myLazy.get();
-            for (int i = 0; i < 100; ++i) {
+            for (int i = 0; i < 100; i++) {
                 assertSame(answer, myLazy.get());
             }
 
@@ -93,7 +93,7 @@ public class LazyFactoryTest {
                 }));
                 threads.get(i).start();
             }
-            for (int i = 0; i < n; ++i) {
+            for (int i = 0; i < n; i++) {
                 try {
                     threads.get(i).join();
                 } catch (InterruptedException e) {
@@ -101,7 +101,7 @@ public class LazyFactoryTest {
                 }
             }
             assertEquals(1, runs);
-            for (int i = 0; i < n - 1; ++i) {
+            for (int i = 0; i < n - 1; i++) {
                 assertSame(answer.get(i), answer.get(i + 1));
             }
 
