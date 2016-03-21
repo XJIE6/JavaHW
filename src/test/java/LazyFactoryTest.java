@@ -1,3 +1,5 @@
+import org.junit.Assert;
+
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.CyclicBarrier;
@@ -59,14 +61,25 @@ public class LazyFactoryTest {
         });
     }
 
+    @org.junit.Test
+    public void testNothing1() {
+        LazyFactory.createLazy1(new Supplier<String>() {
+
+            @Override
+            public String get() {
+                Assert.fail();
+                return null;
+            }
+        });
+    }
+
+
     private static class LazyFactoryTester2<T> {
-        volatile int runs;
-        static final int n = 10;
-        ArrayList<Object> answer = new ArrayList<Object>();
+        private volatile int runs;
+        private static final int n = 10;
+        private ArrayList<Object> answer = new ArrayList<Object>();
 
         LazyFactoryTester2(final Supplier<T> supplier) {
-            answer.clear();
-            runs = 0;
             final Lazy<T> myLazy = LazyFactory.createLazy2(new Supplier<T>() {
                 public T get() {
                     runs++;
@@ -181,12 +194,23 @@ public class LazyFactoryTest {
         });
     }
 
+    @org.junit.Test
+    public void testNothing2() {
+        LazyFactory.createLazy2(new Supplier<String>() {
+
+            @Override
+            public String get() {
+                Assert.fail();
+                return null;
+            }
+        });
+    }
+
     static class LazyFactoryTester3<T> {
-        static final int n = 10;
-        ArrayList<Object> answer = new ArrayList<Object>();
+        private static final int n = 10;
+        private ArrayList<Object> answer = new ArrayList<Object>();
 
         LazyFactoryTester3(final Supplier<T> supplier) {
-            answer.clear();
             final Lazy<T> myLazy = LazyFactory.createLazy3(supplier);
             final CyclicBarrier barrier = new CyclicBarrier(n);
             ArrayList<Thread> threads = new ArrayList<Thread>(n);

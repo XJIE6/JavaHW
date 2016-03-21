@@ -8,7 +8,7 @@ import java.util.function.Supplier;
 public class LazyFactory {
 
     abstract private static class MyLazy<T> implements Lazy<T> {
-        Boolean got = false;
+        boolean got = false;
         Object result = null;
 
         MyLazy(Supplier<T> supplier) {
