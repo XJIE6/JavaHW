@@ -157,17 +157,18 @@ public class TorrentClient {
     static ArrayList<File> getFiles() {
         return files;
     }
-    public static void main(String[] args) {
-        try {
-            client = new ClientSid();
-        } catch (IOException e) {
-        }
+    public static void main(String[] args) throws IOException {
+        serverConnection = new Socket("127.0.0.1", 8081);
+        in = new DataInputStream(serverConnection.getInputStream());
+        out = new DataOutputStream(serverConnection.getOutputStream());
+        client = new ClientSid();
+        files = new ArrayList<>();
         Thread thread = new Thread(client);
         thread.setDaemon(true);
         thread.start();
 
-        setUpdate();
 
+        setUpdate();
         Scanner in = new Scanner(System.in);
         while (true) {
             String[] command = in.nextLine().split(" ");
