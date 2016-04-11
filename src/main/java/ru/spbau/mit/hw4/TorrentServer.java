@@ -7,6 +7,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Set;
 
 public class TorrentServer {
@@ -25,6 +26,7 @@ public class TorrentServer {
         @Override
         public void run() {
             while (true) {
+                int id;
                 try {
                     switch (in.readByte()) {
                         case 1:
@@ -41,7 +43,11 @@ public class TorrentServer {
                             files.add(file);
                             break;
                         case 3:
-                            int id = in.readInt();
+                            id = in.readInt();
+                            if (sids.get(id) == null) {
+                                out.writeInt(0);
+                                break;
+                            }
                             out.writeInt(sids.get(id).size());
                             for (Sid sid : sids.get(id)) {
                                 for (byte b : sid.ip()) {
@@ -54,7 +60,11 @@ public class TorrentServer {
                             Sid sid = new Sid(ip, in.readShort());
                             int count = in.readInt();
                             for (int i = 0; i < count; ++i) {
-                                sids.get(in.readInt()).add(sid);
+                                id = in.readInt();
+                                if (sids.get(id) == null) {
+                                    sids.put(id, new HashSet<>());
+                                }
+                                sids.get(id).add(sid);
                             }
                             out.writeBoolean(true);
                             break;
@@ -70,6 +80,7 @@ public class TorrentServer {
         } catch (IOException e) {
         }
         files = new ArrayList<>();
+        sids = new HashMap<>();
         while (true) {
             try {
                 Thread thread = new Thread(new Handler(serverSocket.accept()));
