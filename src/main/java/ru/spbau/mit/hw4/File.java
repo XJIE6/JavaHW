@@ -6,7 +6,7 @@ class File {
     private int id;
     private String name;
     private long size;
-    ArrayList<Integer> parts;
+    private ArrayList<Integer> parts;
     File (int id, String name, long size) {
         this.id = id;
         this.name = name;
