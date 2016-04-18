@@ -6,15 +6,15 @@ import java.net.Socket;
 
 class Sid {
     private byte[] ip;
-    private short port;
-    Sid(byte[] ip, short port) {
+    private int port;
+    Sid(byte[] ip, int port) {
         this.ip = ip;
         this.port = port;
     }
     byte[] ip() {
         return ip;
     }
-    Short getPort() {
+    int getPort() {
         return port;
     }
     Socket connect() throws IOException {
