@@ -40,7 +40,6 @@ public class TorrentServer implements Runnable{
                 try {
                     switch (in.readByte()) {
                         case 1:
-                            System.out.println("serv 1");
                             out.writeInt(files.size());
                             for (PartableFile file : files) {
                                 out.writeInt(file.getId());
@@ -49,14 +48,12 @@ public class TorrentServer implements Runnable{
                             }
                             break;
                         case 2:
-                            System.out.println("serv 2");
                             PartableFile file = new PartableFile(files.size(), in.readUTF(), in.readLong());
                             out.writeInt(files.size());
                             files.add(file);
                             break;
                         case 3:
                             synchronized (oldSids) {
-                                System.out.println("serv 3");
                                 id = in.readInt();
                                 if (oldSids.get(id) == null) {
                                     out.writeInt(0);
@@ -73,7 +70,6 @@ public class TorrentServer implements Runnable{
                             break;
                         case 4:
                             synchronized (newSids) {
-                                System.out.println("serv 4");
                                 int port = in.readInt();
                                 Sid sid = new Sid(ip, port);
                                 int count = in.readInt();
@@ -105,35 +101,38 @@ public class TorrentServer implements Runnable{
                     }
                 }
             }
-        }, 0, 3000);
+        }, 0, TorrentClient.time);
     }
 
-    void write(DataOutputStream out) throws IOException {
+    private void write(DataOutputStream out) throws IOException {
         out.writeInt(files.size());
         for (PartableFile file : files) {
             file.write(out);
         }
     }
 
-    void read(DataInputStream in) throws IOException {
+    private void read(DataInputStream in) throws IOException {
         int count = in.readInt();
         for (int i = 0; i < count; ++i) {
             files.add(new PartableFile(in));
         }
     }
 
-    TorrentServer() {
-        try {
-            serverSocket = new ServerSocket(8081);
-        } catch (IOException e) {
-        }
+    TorrentServer() throws IOException {
+        serverSocket = new ServerSocket(8081);
         files = new ArrayList<>();
         newSids = new HashMap<>();
         oldSids = new HashMap<>();
         setClear();
     }
     public static void main(String[] args) {
-        TorrentServer server = new TorrentServer();
+        TorrentServer server = null;
+        try {
+            server = new TorrentServer();
+        } catch (IOException e) {
+            System.out.println("fail");
+            System.exit(0);
+        }
         try {
             server.read(new DataInputStream(new FileInputStream("server.info")));
         } catch (IOException e) {

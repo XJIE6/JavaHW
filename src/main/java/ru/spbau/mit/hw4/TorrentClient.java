@@ -12,6 +12,8 @@ public class TorrentClient {
     private DataInputStream in;
     private DataOutputStream out;
     ArrayList<PartableFile> files;
+    static int time = 30000;
+    static int size = 1 << 10;
 
     private class ClientSid implements Runnable {
         private ServerSocket serverSocket;
@@ -24,7 +26,6 @@ public class TorrentClient {
                     thread = new Thread(new Handler(serverSocket.accept()));
                     thread.setDaemon(true);
                     thread.start();
-                    System.out.println("new connection");
                 } catch (IOException e) {
                 }
             }
@@ -44,7 +45,6 @@ public class TorrentClient {
                     int id;
                     switch(in.readByte()) {
                         case 1:
-                            System.out.println("sid 1");
                             id = in.readInt();
                             for (PartableFile file : files) {
                                 if (file.getId() == id) {
@@ -57,11 +57,8 @@ public class TorrentClient {
                             }
                             break;
                         case 2:
-                            System.out.println("sid 2");
                             id = in.readInt();
                             int part = in.readInt();
-                            System.out.println("part");
-                            System.out.println(part);
                             PartableFile file = null;
                             for(PartableFile f : files) {
                                 if (f.getId() == id) {
@@ -70,16 +67,13 @@ public class TorrentClient {
                                 }
                             }
                             RandomAccessFile f = new RandomAccessFile(file.getFile(), "rw");
-                            byte[] buffer = new byte[1 << 10];
-                            f.seek((1 << 10) * part);
-                            int len = f.read(buffer, 0, (1 << 10));
-                            System.out.println("len");
-                            System.out.println(len);
+                            byte[] buffer = new byte[size];
+                            f.seek((size) * part);
+                            int len = f.read(buffer, 0, (size));
                             out.write(buffer, 0, len);
                             break;
                     }
                 } catch (IOException e) {
-                    e.printStackTrace();
                 }
             }
         }
@@ -153,7 +147,6 @@ public class TorrentClient {
                                     }
                                 }
                             } catch (IOException e) {
-
                             }
                         }
                     });
@@ -167,7 +160,6 @@ public class TorrentClient {
                     }
                 }
                 threads.clear();
-                System.out.println("info downloaded");
 
                 RandomAccessFile file = null;
                 try {
@@ -175,11 +167,9 @@ public class TorrentClient {
                     file = new RandomAccessFile(finalFile.getFile().getPath(), "rw");
                     file.setLength(finalFile.getSize());
                 } catch (FileNotFoundException e) {
-
                 } catch (IOException e) {
                 }
                 for (Map.Entry<Integer, ArrayList<Sid>> part : sids.entrySet()) {
-                    //final RandomAccessFile finalF = file;
                     Thread thread = new Thread(new Runnable() {
                         @Override
                         public void run() {
@@ -191,26 +181,17 @@ public class TorrentClient {
                                     connection = sid.connect();
                                     in = new DataInputStream(connection.getInputStream());
                                     out = new DataOutputStream(connection.getOutputStream());
-                                    System.out.println("part");
-                                    System.out.println(part.getKey());
                                     out.writeByte(2);
                                     out.writeInt(id);
-                                    System.out.println("id");
-                                    System.out.println(id);
                                     out.writeInt(part.getKey());
                                     byte[] buffer = new byte[1 << 10];
                                     int len = in.read(buffer);
-                                    System.out.println("len");
-                                    System.out.println(len);
                                     RandomAccessFile file = new RandomAccessFile(finalFile.getFile().getPath(), "rw");
                                     file.seek((1 << 10) * part.getKey());
                                     file.write(buffer, 0, len);
                                     finalFile.addPart(part.getKey());
-                                    System.out.println("part downloaded");
                                     break;
                                 } catch (IOException e) {
-                                    System.out.println("fail");
-                                    e.printStackTrace();
                                 }
                             }
                         }
@@ -224,8 +205,6 @@ public class TorrentClient {
                     } catch (InterruptedException e) {
                     }
                 }
-
-                System.out.println("file downloaded");
             }
         });
         thread.setDaemon(true);
@@ -264,17 +243,17 @@ public class TorrentClient {
                     }
                 }
             }
-        }, 0, 3000);
+        }, 0, time);
     }
 
-    void write(DataOutputStream out) throws IOException {
+    private void write(DataOutputStream out) throws IOException {
         out.writeInt(files.size());
         for (PartableFile file : files) {
             file.write(out);
         }
     }
 
-    void read(DataInputStream in) throws IOException {
+    private void read(DataInputStream in) throws IOException {
         int count = in.readInt();
         for (int i = 0; i < count; ++i) {
             files.add(new PartableFile(in));
@@ -293,8 +272,14 @@ public class TorrentClient {
         setUpdate();
     }
 
-    public static void main(String[] args) throws IOException {
-        TorrentClient client = new TorrentClient();
+    public static void main(String[] args) {
+        TorrentClient client = null;
+        try {
+            client = new TorrentClient();
+        } catch (IOException e) {
+            System.out.println("fail");
+            System.exit(0);
+        }
         try {
             client.read(new DataInputStream(new FileInputStream("client.info")));
         } catch (IOException e) {

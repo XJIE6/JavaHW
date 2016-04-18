@@ -16,7 +16,7 @@ class PartableFile {
         this.file = file;
         name = file.getName();
         size = file.length();
-        for (int i = 0; i * (1 << 10) < file.length(); ++i) {
+        for (int i = 0; i * (TorrentClient.size) < file.length(); ++i) {
             parts.add(i);
         }
     }
