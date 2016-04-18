@@ -14,12 +14,9 @@ public class TorrentServer implements Runnable{
     @Override
     public void run() {
         while (true) {
-            System.out.print(8);
             Thread thread = null;
             try {
-                System.out.print(7);
                 thread = new Thread(new Handler(serverSocket.accept()));
-                System.out.print(6);
                 thread.setDaemon(true);
                 thread.start();
             } catch (IOException e) {
@@ -43,7 +40,7 @@ public class TorrentServer implements Runnable{
                 try {
                     switch (in.readByte()) {
                         case 1:
-                            System.out.print("1");
+                            System.out.println("serv 1");
                             out.writeInt(files.size());
                             for (PartableFile file : files) {
                                 out.writeInt(file.getId());
@@ -52,43 +49,36 @@ public class TorrentServer implements Runnable{
                             }
                             break;
                         case 2:
-                            System.out.print("2");
+                            System.out.println("serv 2");
                             PartableFile file = new PartableFile(files.size(), in.readUTF(), in.readLong());
                             out.writeInt(files.size());
                             files.add(file);
                             break;
                         case 3:
                             synchronized (oldSids) {
-                                System.out.print("3");
+                                System.out.println("serv 3");
                                 id = in.readInt();
                                 if (oldSids.get(id) == null) {
                                     out.writeInt(0);
                                     break;
                                 }
-                                System.out.print("a");
                                 out.writeInt(oldSids.get(id).size());
                                 for (Sid sid : oldSids.get(id)) {
-                                    System.out.print("b");
                                     for (byte b : sid.ip()) {
                                         out.writeByte(b);
                                     }
-                                    System.out.print("c");
                                     out.writeInt(sid.getPort());
-                                    System.out.print("d");
                                 }
                             }
                             break;
                         case 4:
                             synchronized (newSids) {
-                                System.out.println("4");
+                                System.out.println("serv 4");
                                 int port = in.readInt();
                                 Sid sid = new Sid(ip, port);
-                                System.out.println(port);
                                 int count = in.readInt();
-                                System.out.println(count);
                                 for (int i = 0; i < count; ++i) {
                                     id = in.readInt();
-                                    System.out.println(id);
                                     if (newSids.get(id) == null) {
                                         newSids.put(id, new HashSet<>());
                                     }
@@ -115,7 +105,7 @@ public class TorrentServer implements Runnable{
                     }
                 }
             }
-        }, 0, 30000);
+        }, 0, 3000);
     }
 
     void write(DataOutputStream out) throws IOException {
@@ -133,11 +123,9 @@ public class TorrentServer implements Runnable{
     }
 
     TorrentServer() {
-        System.out.print(1);
         try {
             serverSocket = new ServerSocket(8081);
         } catch (IOException e) {
-            System.out.print("wtf");
         }
         files = new ArrayList<>();
         newSids = new HashMap<>();
@@ -145,7 +133,6 @@ public class TorrentServer implements Runnable{
         setClear();
     }
     public static void main(String[] args) {
-        System.out.print(1);
         TorrentServer server = new TorrentServer();
         try {
             server.read(new DataInputStream(new FileInputStream("server.info")));
