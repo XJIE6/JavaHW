@@ -6,10 +6,10 @@ import java.net.Socket;
 import java.util.*;
 
 public class TorrentServer implements Runnable{
-    private static ServerSocket serverSocket;
-    private static HashMap<Integer, Set<Sid>> newSids;
-    private static HashMap<Integer, Set<Sid>> oldSids;
-    private static ArrayList<PartableFile> files;
+    private ServerSocket serverSocket;
+    private HashMap<Integer, Set<Sid>> newSids;
+    private HashMap<Integer, Set<Sid>> oldSids;
+    private ArrayList<PartableFile> files;
 
     @Override
     public void run() {
@@ -24,7 +24,7 @@ public class TorrentServer implements Runnable{
         }
     }
 
-    private static class Handler implements Runnable{
+    private class Handler implements Runnable{
         DataInputStream in;
         DataOutputStream out;
         byte[] ip;
