@@ -12,7 +12,7 @@ public class TorrentClient {
     private DataInputStream in;
     private DataOutputStream out;
     ArrayList<PartableFile> files;
-    static int time = 30000;
+    static int time = 3000;
     static int size = 1 << 10;
 
     private class ClientSid implements Runnable {
@@ -85,7 +85,7 @@ public class TorrentClient {
         }
     }
 
-    private Iterable<PartableFile> list() throws IOException {
+    Iterable<PartableFile> list() throws IOException {
         synchronized (serverConnection) {
             ArrayList<PartableFile> result = new ArrayList<>();
             out.writeByte(1);
@@ -96,6 +96,7 @@ public class TorrentClient {
             return result;
         }
     }
+
     int upload(PartableFile f) throws IOException {
         synchronized (serverConnection) {
             out.writeByte(2);
@@ -107,6 +108,89 @@ public class TorrentClient {
             return id;
         }
     }
+
+    HashMap<Integer, ArrayList<Sid>> getSids(int id) throws IOException {
+        HashMap<Integer, ArrayList<Sid>> sids = new HashMap<>();
+        ArrayList<Thread> threads = new ArrayList<>();
+        Iterable<Sid> source = sources(id);
+        for (Sid sid : source) {
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    Socket connection = null;
+                    DataInputStream in = null;
+                    DataOutputStream out = null;
+                    try {
+                        connection = sid.connect();
+                        in = new DataInputStream(connection.getInputStream());
+                        out = new DataOutputStream(connection.getOutputStream());
+                        out.writeByte(1);
+                        out.writeInt(id);
+                        int n = in.readInt();
+                        for (int i = 0; i < n; ++i) {
+                            int cur = in.readInt();
+                            synchronized (sids) {
+                                if (sids.get(cur) == null) {
+                                    sids.put(cur, new ArrayList<>());
+                                }
+                                sids.get(cur).add(sid);
+                            }
+                        }
+                    } catch (IOException e) {
+                    }
+                }
+            });
+            thread.start();
+            threads.add(thread);
+        }
+        for (Thread thread : threads) {
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+            }
+        }
+        return sids;
+    }
+
+    void downloadPart(int partNumber, ArrayList<Sid> sids, PartableFile file) {
+        Socket connection = null;
+        DataInputStream in = null;
+        DataOutputStream out = null;
+        for (Sid sid : sids) {
+            try {
+                connection = sid.connect();
+                in = new DataInputStream(connection.getInputStream());
+                out = new DataOutputStream(connection.getOutputStream());
+                out.writeByte(2);
+                out.writeInt(file.getId());
+                out.writeInt(partNumber);
+                byte[] buffer = new byte[1 << 10];
+                int len = in.read(buffer);
+                RandomAccessFile rAFile = new RandomAccessFile(file.getFile().getPath(), "rw");
+                rAFile.seek((1 << 10) * partNumber);
+                rAFile.write(buffer, 0, len);
+                file.addPart(partNumber);
+                break;
+            } catch (IOException e) {
+            }
+        }
+    }
+
+    void downloadFile(Map<Integer, ArrayList<Sid>> sids, PartableFile file) {
+        ArrayList<Thread> threads = new ArrayList<>();
+        for (Map.Entry<Integer, ArrayList<Sid>> part : sids.entrySet()) {
+            Thread thread = new Thread(() -> downloadPart(part.getKey(), part.getValue(), file));
+            thread.start();
+            threads.add(thread);
+        }
+        for (Thread thread : threads) {
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+            }
+        }
+    }
+
     void download(int id, String path) throws IOException {
         PartableFile file = null;
         for (PartableFile f : list()) {
@@ -116,51 +200,17 @@ public class TorrentClient {
             }
         }
         files.add(file);
-        Iterable<Sid> source = sources(id);
+
         final PartableFile finalFile = file;
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                HashMap<Integer, ArrayList<Sid>> sids = new HashMap<>();
-                ArrayList<Thread> threads = new ArrayList<>();
-                for (Sid sid : source) {
-                    Thread thread = new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            Socket connection = null;
-                            DataInputStream in = null;
-                            DataOutputStream out = null;
-                            try {
-                                connection = sid.connect();
-                                in = new DataInputStream(connection.getInputStream());
-                                out = new DataOutputStream(connection.getOutputStream());
-                                out.writeByte(1);
-                                out.writeInt(id);
-                                int n = in.readInt();
-                                for (int i = 0; i < n; ++i) {
-                                    int cur = in.readInt();
-                                    synchronized (sids) {
-                                        if (sids.get(cur) == null) {
-                                            sids.put(cur, new ArrayList<>());
-                                        }
-                                        sids.get(cur).add(sid);
-                                    }
-                                }
-                            } catch (IOException e) {
-                            }
-                        }
-                    });
-                    thread.start();
-                    threads.add(thread);
+                HashMap<Integer, ArrayList<Sid>> sids = null;
+                try {
+                    sids = getSids(id);
+                } catch (IOException e) {
+                    return;
                 }
-                for (Thread thread : threads) {
-                    try {
-                        thread.join();
-                    } catch (InterruptedException e) {
-                    }
-                }
-                threads.clear();
-
                 RandomAccessFile file = null;
                 try {
                     finalFile.createFile(path);
@@ -169,47 +219,13 @@ public class TorrentClient {
                 } catch (FileNotFoundException e) {
                 } catch (IOException e) {
                 }
-                for (Map.Entry<Integer, ArrayList<Sid>> part : sids.entrySet()) {
-                    Thread thread = new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            Socket connection = null;
-                            DataInputStream in = null;
-                            DataOutputStream out = null;
-                            for (Sid sid : part.getValue()) {
-                                try {
-                                    connection = sid.connect();
-                                    in = new DataInputStream(connection.getInputStream());
-                                    out = new DataOutputStream(connection.getOutputStream());
-                                    out.writeByte(2);
-                                    out.writeInt(id);
-                                    out.writeInt(part.getKey());
-                                    byte[] buffer = new byte[1 << 10];
-                                    int len = in.read(buffer);
-                                    RandomAccessFile file = new RandomAccessFile(finalFile.getFile().getPath(), "rw");
-                                    file.seek((1 << 10) * part.getKey());
-                                    file.write(buffer, 0, len);
-                                    finalFile.addPart(part.getKey());
-                                    break;
-                                } catch (IOException e) {
-                                }
-                            }
-                        }
-                    });
-                    thread.start();
-                    threads.add(thread);
-                }
-                for (Thread thread : threads) {
-                    try {
-                        thread.join();
-                    } catch (InterruptedException e) {
-                    }
-                }
+                downloadFile(sids, finalFile);
             }
         });
         thread.setDaemon(true);
         thread.start();
     }
+
     private Iterable<Sid> sources(int id) throws IOException {
         synchronized (serverConnection) {
             ArrayList<Sid> result = new ArrayList<>();
@@ -226,6 +242,7 @@ public class TorrentClient {
             return result;
         }
     }
+
     private void setUpdate() {
         new Timer(true).schedule(new TimerTask() {
             @Override

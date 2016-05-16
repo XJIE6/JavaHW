@@ -22,14 +22,14 @@ public class Test {
     public void onePartTest() throws IOException {
         TorrentClient client1 = new TorrentClient();
         TorrentClient client2 = new TorrentClient();
-        File in = new File("src/main/resourses/from/file1.txt");
-        File out = new File("src/main/resourses/to/file1.txt");
+        File in = new File("src/main/resources/from/file1.txt");
+        File out = new File("src/main/resources/to/file1.txt");
         int id = client1.upload(new PartableFile(in));
         try {
             Thread.sleep(TorrentClient.time * 2);
         } catch (InterruptedException e) {
         }
-        client2.download(id, "src/main/resourses/to");
+        client2.download(id, "src/main/resources/to");
         try {
             Thread.sleep(TorrentClient.time * 2);
         } catch (InterruptedException e) {
@@ -42,15 +42,15 @@ public class Test {
         TorrentClient client1 = new TorrentClient();
         TorrentClient client2 = new TorrentClient();
         TorrentClient client3 = new TorrentClient();
-        File in = new File("src/main/resourses/from/file2.txt");
-        File middle = new File("src/main/resourses/middle/file2.txt");
-        File out = new File("src/main/resourses/to/file2.txt");
+        File in = new File("src/main/resources/from/file2.txt");
+        File middle = new File("src/main/resources/middle/file2.txt");
+        File out = new File("src/main/resources/to/file2.txt");
         int id = client1.upload(new PartableFile(in));
         try {
             Thread.sleep(TorrentClient.time * 2);
         } catch (InterruptedException e) {
         }
-        client2.download(id, "src/main/resourses/middle");
+        client2.download(id, "src/main/resources/middle");
         try {
             Thread.sleep(TorrentClient.time * 2);
         } catch (InterruptedException e) {
@@ -63,7 +63,7 @@ public class Test {
             Thread.sleep(TorrentClient.time * 2);
         } catch (InterruptedException e) {
         }
-        client3.download(id, "src/main/resourses/to");
+        client3.download(id, "src/main/resources/to");
         try {
             Thread.sleep(TorrentClient.time * 2);
         } catch (InterruptedException e) {
