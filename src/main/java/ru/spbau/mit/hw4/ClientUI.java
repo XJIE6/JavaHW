@@ -1,9 +1,6 @@
 package ru.spbau.mit.hw4;
 import java.awt.*;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -13,41 +10,53 @@ import javax.swing.text.JTextComponent;
 public class ClientUI extends JFrame {
     TorrentClient client;
     Box eastBox;
-    Box box;
+    Box centerBox;
 
-    ClientUI() throws IOException {
+    ClientUI() {
         super("main");
-        client = new TorrentClient();
+        try {
+            client = new TorrentClient();
+        } catch (IOException e) {
+            return;
+        }
+        try {
+            client.read(new DataInputStream(new FileInputStream("client.info")));
+        } catch (IOException e) {
+        }
+
         setBounds(100, 100, 700, 700);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 
         eastBox = Box.createVerticalBox();
         getContentPane().add(eastBox, BorderLayout.EAST);
 
+        centerBox = Box.createVerticalBox();
+        getContentPane().add(centerBox, BorderLayout.CENTER);
+
+        Box northBox = Box.createHorizontalBox();
+        getContentPane().add(northBox, BorderLayout.NORTH);
+
         JButton button = new JButton("upload");
-        button.addActionListener((e) -> {
-            try {
-                upload();
-            } catch (IOException e1) {
-                e1.printStackTrace();
-            }
-        });
-        getContentPane().add(button, BorderLayout.WEST);
+        button.addActionListener((e) -> upload());
+        northBox.add(button);
 
         button = new JButton("refresh list");
+        button.addActionListener((e) -> evallist());
+        northBox.add(button);
+
+        button = new JButton("exit");
         button.addActionListener((e) -> {
             try {
-                evallist();
+                client.write(new DataOutputStream(new FileOutputStream("client.info", false)));
             } catch (IOException e1) {
-                e1.printStackTrace();
             }
+            System.exit(0);
         });
-        getContentPane().add(button, BorderLayout.NORTH);
-        setVisible(true);
+        northBox.add(button);
 
-        box = Box.createVerticalBox();
-        getContentPane().add(box, BorderLayout.CENTER);
         evallist();
+
+        setVisible(true);
     }
 
     private void download(PartableFile file) {
@@ -81,18 +90,11 @@ public class ClientUI extends JFrame {
         frame.setVisible(false);
 
         JProgressBar pb = new JProgressBar(0, (int) Math.floor(file.getSize() / (1.0 * TorrentClient.size)));
-
-
-        box.add(new JTextField(file.toString()));
-        box.add(pb);
-        box.revalidate();
-
-
-
+        centerBox.add(new JTextField(file.toString()));
+        centerBox.add(pb);
+        centerBox.revalidate();
 
         client.files.add(file);
-
-
 
         ArrayList<Thread> threads = new ArrayList<>();
         for (Map.Entry<Integer, ArrayList<Sid>> part : sids.entrySet()) {
@@ -114,9 +116,15 @@ public class ClientUI extends JFrame {
     }
 
 
-    private void evallist() throws IOException {
+    private void evallist() {
+        Iterable<PartableFile> files = null;
+        try {
+            files = client.list();
+        } catch (IOException e) {
+            return;
+        }
         eastBox.removeAll();
-        for (PartableFile f : client.list()) {
+        for (PartableFile f : files) {
             eastBox.add(new JTextField(f.toString()));
             JButton button = new JButton("download");
             button.addActionListener(e -> download(f));
@@ -125,7 +133,7 @@ public class ClientUI extends JFrame {
         eastBox.revalidate();
     }
 
-    private void upload() throws IOException {
+    private void upload() {
         JFrame frame = new JFrame("chose file");
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
@@ -133,7 +141,10 @@ public class ClientUI extends JFrame {
         int result = fileChooser.showOpenDialog(frame);
         frame.add(fileChooser);
         if (result == JFileChooser.APPROVE_OPTION) {
-            client.upload(new PartableFile(fileChooser.getSelectedFile()));
+            try {
+                client.upload(new PartableFile(fileChooser.getSelectedFile()));
+            } catch (IOException e) {
+            }
             System.out.println("Selected file: " + fileChooser.getSelectedFile().getAbsolutePath());
         }
         frame.setVisible(false);

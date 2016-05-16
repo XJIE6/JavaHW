@@ -263,14 +263,14 @@ public class TorrentClient {
         }, 0, time);
     }
 
-    private void write(DataOutputStream out) throws IOException {
+    void write(DataOutputStream out) throws IOException {
         out.writeInt(files.size());
         for (PartableFile file : files) {
             file.write(out);
         }
     }
 
-    private void read(DataInputStream in) throws IOException {
+    void read(DataInputStream in) throws IOException {
         int count = in.readInt();
         for (int i = 0; i < count; ++i) {
             files.add(new PartableFile(in));
