@@ -101,7 +101,7 @@ public class TorrentServer implements Runnable{
                     }
                 }
             }
-        }, 0, TorrentClient.time);
+        }, 0, TorrentClient.time * 2);
     }
 
     private void write(DataOutputStream out) throws IOException {

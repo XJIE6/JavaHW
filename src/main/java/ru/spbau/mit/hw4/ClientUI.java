@@ -60,6 +60,8 @@ public class ClientUI extends JFrame {
     }
 
     private void download(PartableFile file) {
+        System.out.print(client.files.size());
+
         HashMap<Integer, ArrayList<Sid>> sids = null;
         try {
             sids = client.getSids(file.getId());
@@ -89,7 +91,7 @@ public class ClientUI extends JFrame {
         }
         frame.setVisible(false);
 
-        JProgressBar pb = new JProgressBar(0, (int) Math.floor(file.getSize() / (1.0 * TorrentClient.size)));
+        JProgressBar pb = new JProgressBar(0, (int) Math.ceil(file.getSize() / (1.0 * TorrentClient.size)));
         centerBox.add(new JTextField(file.toString()));
         centerBox.add(pb);
         centerBox.revalidate();
@@ -99,9 +101,10 @@ public class ClientUI extends JFrame {
         ArrayList<Thread> threads = new ArrayList<>();
         for (Map.Entry<Integer, ArrayList<Sid>> part : sids.entrySet()) {
             Thread thread = new Thread(() -> {
-                client.downloadPart(part.getKey(), part.getValue(), file);
-                synchronized (pb) {
-                    pb.setValue(pb.getValue() + 1);
+                if (client.downloadPart(part.getKey(), part.getValue(), file)) {
+                    synchronized (pb) {
+                        pb.setValue(pb.getValue() + 1);
+                    }
                 }
             });
             thread.start();

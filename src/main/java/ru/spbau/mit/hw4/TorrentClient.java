@@ -48,10 +48,16 @@ public class TorrentClient {
                             id = in.readInt();
                             for (PartableFile file : files) {
                                 if (file.getId() == id) {
-                                    out.writeInt(file.getParts().size());
-                                    for (int number : file.getParts()) {
-                                        out.writeInt(number);
+//                                    out.writeInt(file.getParts().size());
+                                    if (!file.getParts().isEmpty()) {
+                                        out.writeInt(1);
+                                        out.writeInt(file.getParts().get(0));
+                                    } else {
+                                        out.writeInt(0);
                                     }
+//                                    for (int number : file.getParts()) {
+//                                        out.writeInt(number);
+//                                    }
                                     break;
                                 }
                             }
@@ -120,6 +126,7 @@ public class TorrentClient {
                     Socket connection = null;
                     DataInputStream in = null;
                     DataOutputStream out = null;
+
                     try {
                         connection = sid.connect();
                         in = new DataInputStream(connection.getInputStream());
@@ -152,7 +159,7 @@ public class TorrentClient {
         return sids;
     }
 
-    void downloadPart(int partNumber, ArrayList<Sid> sids, PartableFile file) {
+    boolean downloadPart(int partNumber, ArrayList<Sid> sids, PartableFile file) {
         Socket connection = null;
         DataInputStream in = null;
         DataOutputStream out = null;
@@ -170,10 +177,11 @@ public class TorrentClient {
                 rAFile.seek((1 << 10) * partNumber);
                 rAFile.write(buffer, 0, len);
                 file.addPart(partNumber);
-                break;
+                return true;
             } catch (IOException e) {
             }
         }
+        return false;
     }
 
     void downloadFile(Map<Integer, ArrayList<Sid>> sids, PartableFile file) {
@@ -248,11 +256,12 @@ public class TorrentClient {
             @Override
             public void run() {
                 synchronized (serverConnection) {
+                    ArrayList<PartableFile> oldFiles = new ArrayList<PartableFile>(files);
                     try {
                         out.writeByte(4);
                         out.writeInt(client.getPort());
-                        out.writeInt(files.size());
-                        for (PartableFile file : files) {
+                        out.writeInt(oldFiles.size());
+                        for (PartableFile file : oldFiles) {
                             out.writeInt(file.getId());
                         }
                         in.readBoolean();
