@@ -48,16 +48,10 @@ public class TorrentClient {
                             id = in.readInt();
                             for (PartableFile file : files) {
                                 if (file.getId() == id) {
-//                                    out.writeInt(file.getParts().size());
-                                    if (!file.getParts().isEmpty()) {
-                                        out.writeInt(1);
-                                        out.writeInt(file.getParts().get(0));
-                                    } else {
-                                        out.writeInt(0);
+                                    out.writeInt(file.getParts().size());
+                                    for (int number : file.getParts()) {
+                                        out.writeInt(number);
                                     }
-//                                    for (int number : file.getParts()) {
-//                                        out.writeInt(number);
-//                                    }
                                     break;
                                 }
                             }
